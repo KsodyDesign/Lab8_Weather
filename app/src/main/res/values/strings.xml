@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Погода</string>
+    <string name="heading">Погода в городе</string>
+    <string name="city_label">Выберите город</string>
+    <string name="refresh">Обновить</string>
+    <string name="loading">Загружаем прогноз…</string>
+    <string name="forecast_heading">Прогноз на 5 дней</string>
+    <string name="temperature">%1$.1f °C</string>
+    <string name="wind">Ветер: %1$.1f км/ч</string>
+    <string name="condition">%1$s %2$s</string>
+    <string name="updated">Данные на %1$s</string>
+    <string name="day_range">%1$.1f° / %2$.1f°</string>
+    <string name="source">Источник: Open-Meteo · температура в °C, ветер в км/ч</string>
+</resources>
