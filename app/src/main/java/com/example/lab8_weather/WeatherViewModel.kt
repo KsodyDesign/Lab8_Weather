@@ -3,13 +3,10 @@ package com.example.lab8_weather
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.gson.JsonParseException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
-import java.io.IOException
 
 sealed interface WeatherUiState {
     data object Loading : WeatherUiState
@@ -44,13 +41,7 @@ class WeatherViewModel(private val repository: WeatherRepository = WeatherReposi
                 },
                 onFailure = { error ->
                     if (BuildConfig.DEBUG) Log.w("Weather", "Forecast request failed", error)
-                    val message = when (error) {
-                        is HttpException -> "Сервис погоды временно недоступен (${error.code()}). Повторите запрос позже."
-                        is JsonParseException -> "Не удалось прочитать ответ сервиса погоды."
-                        is IOException -> "Не удалось подключиться к сервису. Проверьте интернет и повторите запрос."
-                        else -> "Не удалось загрузить погоду. Попробуйте ещё раз."
-                    }
-                    mutableState.value = WeatherUiState.Error(message)
+                    mutableState.value = WeatherUiState.Error(WeatherErrors.message(error))
                 }
             )
         }

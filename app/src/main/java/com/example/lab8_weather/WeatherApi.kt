@@ -24,7 +24,10 @@ interface WeatherApiService {
 object WeatherApi {
     val service: WeatherApiService by lazy {
         val client = OkHttpClient.Builder()
+            .dns(WeatherDns())
             .protocols(listOf(okhttp3.Protocol.HTTP_1_1))
+            .connectionSpecs(listOf(okhttp3.ConnectionSpec.Builder(okhttp3.ConnectionSpec.MODERN_TLS)
+                .tlsVersions(okhttp3.TlsVersion.TLS_1_2).build()))
             .connectTimeout(12, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS)
             .callTimeout(25, TimeUnit.SECONDS)

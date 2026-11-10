@@ -60,6 +60,37 @@ class WeatherScreenTest {
     }
 
     private fun model() = ViewModelProvider(activity)[WeatherViewModel::class.java]
+    @Test fun loadsForecastUsingTls12AndOnlyLegacyRootCertificate() {
+        val context = instrumentation.targetContext
+        val certificate = context.resources.openRawResource(R.raw.isrg_root_x1).use {
+            java.security.cert.CertificateFactory.getInstance("X.509").generateCertificate(it)
+        }
+        val store = java.security.KeyStore.getInstance(java.security.KeyStore.getDefaultType()).apply {
+            load(null)
+            setCertificateEntry("isrg-root-x1", certificate)
+        }
+        val factory = javax.net.ssl.TrustManagerFactory.getInstance(javax.net.ssl.TrustManagerFactory.getDefaultAlgorithm()).apply { init(store) }
+        val trust = factory.trustManagers.single() as javax.net.ssl.X509TrustManager
+        val tls = javax.net.ssl.SSLContext.getInstance("TLS").apply { init(null, arrayOf(trust), null) }
+        val client = okhttp3.OkHttpClient.Builder()
+            .sslSocketFactory(tls.socketFactory, trust)
+            .protocols(listOf(okhttp3.Protocol.HTTP_1_1))
+            .dns(WeatherDns())
+            .connectionSpecs(listOf(okhttp3.ConnectionSpec.Builder(okhttp3.ConnectionSpec.MODERN_TLS)
+                .tlsVersions(okhttp3.TlsVersion.TLS_1_2).build()))
+            .callTimeout(25, java.util.concurrent.TimeUnit.SECONDS).build()
+        try {
+            val api = retrofit2.Retrofit.Builder().baseUrl("https://api.open-meteo.com/")
+                .client(client).addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
+                .build().create(WeatherApiService::class.java)
+            val response = kotlinx.coroutines.runBlocking { api.forecast(55.75, 37.62) }
+            assertEquals(5, WeatherMapper.map(response, City.all[1]).days.size)
+        } finally {
+            client.connectionPool.evictAll()
+            client.dispatcher.executorService.shutdown()
+        }
+    }
+
     @Test fun loadsCitiesSurvivesRotationAndHandlesOffline() {
         shell("svc wifi enable")
         shell("svc data enable")
